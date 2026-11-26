@@ -319,7 +319,6 @@ const mao = new THREE.Group();
 
 camera.add(mao);
 
-// A mão fica à frente da câmara
 mao.position.set(
   0.20,
   -0.42,
@@ -359,7 +358,7 @@ dedo.rotation.z = 0.5;
 
 mao.add(dedo);
 
-// Berlinde que aparece na mão
+// Berlinde na mão
 const berlindeMao = new THREE.Mesh(
   new THREE.SphereGeometry(
     0.105,
@@ -424,7 +423,8 @@ function criarBerlinde(
     mesh: mesh,
     vel: new THREE.Vector3(0, 0, 0),
     jogador: jogador,
-    ativa: true
+    ativa: true,
+    conquistado: false
   };
 
   bolas.push(bola);
@@ -623,7 +623,8 @@ function lançarBerlinde(forca) {
       .multiplyScalar(forca)
       .add(new THREE.Vector3(0, 2, 0)),
     jogador: true,
-    ativa: true
+    ativa: true,
+    conquistado: false
   };
 
   bolas.push(bola);
@@ -722,7 +723,7 @@ function atualizar(dt) {
   camera.rotation.y = yaw;
   camera.rotation.x = pitch;
 
-  // Aumentar a força enquanto se segura
+  // Carregar força do lançamento
   if (aCarregar) {
 
     tempoCarga += dt;
@@ -735,15 +736,20 @@ function atualizar(dt) {
     barra.style.width = percentagem + '%';
   }
 
-  // Física dos berlindes
+  // ------------------------------------------------
+  // MOVIMENTO E FÍSICA DOS BERLINDES
+  // ------------------------------------------------
+
   for (const bola of bolas) {
 
     if (!bola.ativa) continue;
 
     if (bola.vel.length() < 0.01) continue;
 
+    // Gravidade
     bola.vel.y -= 9.8 * dt;
 
+    // Movimento
     bola.mesh.position.addScaledVector(
       bola.vel,
       dt
@@ -754,18 +760,31 @@ function atualizar(dt) {
 
       bola.mesh.position.y = 0.22;
 
-      bola.vel.y =
-        Math.abs(bola.vel.y) * 0.35;
+      if (bola.vel.y < -0.5) {
+        bola.vel.y = Math.abs(bola.vel.y) * 0.35;
+      } else {
+        bola.vel.y = 0;
+      }
 
-      bola.vel.x *= 0.82;
-      bola.vel.z *= 0.82;
+      // Atrito no chão
+      bola.vel.x *= Math.pow(0.985, dt * 60);
+      bola.vel.z *= Math.pow(0.985, dt * 60);
+
+      // Parar quando praticamente imobilizado
+      if (
+        Math.abs(bola.vel.x) < 0.025 &&
+        Math.abs(bola.vel.z) < 0.025
+      ) {
+        bola.vel.x = 0;
+        bola.vel.z = 0;
+      }
 
       if (Math.abs(bola.vel.y) < 0.5) {
         bola.vel.y = 0;
       }
     }
 
-    // Rotação
+    // Rotação visual
     bola.mesh.rotation.x +=
       bola.vel.z * dt * 2;
 
@@ -789,9 +808,10 @@ function atualizar(dt) {
     }
   }
 
-  // Colisões entre berlindes
-  
-  // Colisões físicas entre berlindes
+  // ------------------------------------------------
+  // COLISÕES FÍSICAS ENTRE BERLINDES
+  // ------------------------------------------------
+
   for (let i = 0; i < bolas.length; i++) {
 
     const a = bolas[i];
@@ -804,7 +824,7 @@ function atualizar(dt) {
 
       if (!b.ativa) continue;
 
-      // Colisão quando estão praticamente à mesma altura
+      // Verificar altura
       if (
         Math.abs(
           a.mesh.position.y - b.mesh.position.y
@@ -822,7 +842,7 @@ function atualizar(dt) {
 
       if (distancia >= distanciaMinima) continue;
 
-      // Direção do impacto
+      // Direção da colisão
       let nx = 1;
       let nz = 0;
 
@@ -831,29 +851,41 @@ function atualizar(dt) {
         nz = dz / distancia;
       }
 
-      // Separar os berlindes para não ficarem sobrepostos
-      const sobreposicao = distanciaMinima - distancia;
+      // Separar os berlindes
+      const sobreposicao =
+        distanciaMinima - distancia;
 
-      a.mesh.position.x -= nx * sobreposicao * 0.5;
-      a.mesh.position.z -= nz * sobreposicao * 0.5;
+      a.mesh.position.x -=
+        nx * sobreposicao * 0.5;
 
-      b.mesh.position.x += nx * sobreposicao * 0.5;
-      b.mesh.position.z += nz * sobreposicao * 0.5;
+      a.mesh.position.z -=
+        nz * sobreposicao * 0.5;
+
+      b.mesh.position.x +=
+        nx * sobreposicao * 0.5;
+
+      b.mesh.position.z +=
+        nz * sobreposicao * 0.5;
 
       // Velocidade relativa
-      const velocidadeRelativaX = b.vel.x - a.vel.x;
-      const velocidadeRelativaZ = b.vel.z - a.vel.z;
+      const velocidadeRelativaX =
+        b.vel.x - a.vel.x;
+
+      const velocidadeRelativaZ =
+        b.vel.z - a.vel.z;
 
       const velocidadeImpacto =
         velocidadeRelativaX * nx +
         velocidadeRelativaZ * nz;
 
-      // Transferência de energia entre os berlindes
+      // Transferência de velocidade
       if (velocidadeImpacto < 0) {
 
         const elasticidade = 0.72;
+
         const impulso =
-          -(1 + elasticidade) * velocidadeImpacto / 2;
+          -(1 + elasticidade) *
+          velocidadeImpacto / 2;
 
         a.vel.x -= impulso * nx;
         a.vel.z -= impulso * nz;
@@ -861,7 +893,7 @@ function atualizar(dt) {
         b.vel.x += impulso * nx;
         b.vel.z += impulso * nz;
 
-        // Contar o berlinde conquistado apenas uma vez
+        // Conquista de berlinde adversário
         if (
           Math.abs(velocidadeImpacto) > 1.5 &&
           a.jogador !== b.jogador
@@ -873,6 +905,7 @@ function atualizar(dt) {
           if (!alvo.conquistado) {
 
             alvo.conquistado = true;
+
             total++;
 
             document.getElementById(
@@ -882,30 +915,9 @@ function atualizar(dt) {
             document.getElementById(
               'mensagem'
             ).textContent =
-              'Boa tacada! Empurraste e conquistaste um berlinde!';
+              'Boa tacada! Conquistaste um berlinde!';
           }
         }
-      }
-    }
-  }
- {
-
-        alvo.ativa = false;
-
-        scene.remove(alvo.mesh);
-
-        total++;
-
-        document.getElementById(
-          'pontos'
-        ).textContent = total;
-
-        document.getElementById(
-          'mensagem'
-        ).textContent =
-          'Acertaste! Conquistaste um berlinde!';
-
-        atacante.vel.multiplyScalar(0.5);
       }
     }
   }
@@ -951,6 +963,3 @@ addEventListener('resize', () => {
 </script>
 </body>
 </html>
-
-
-
