@@ -3,305 +3,882 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BUGALHOS - TRÊS COVINHAS 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUGALHOS - TRÊS COVINHAS</title>
+
 <style>
-*{box-sizing:border-box}
-body{margin:0;overflow:hidden;background:#171717;color:white;font-family:Arial}
-canvas{display:block;touch-action:none}
-#titulo{position:fixed;top:10px;left:0;width:100%;text-align:center;
-font-size:20px;font-weight:bold;text-shadow:2px 2px 4px #000;pointer-events:none}
-#info{position:fixed;top:45px;left:10px;background:#0009;padding:9px;border-radius:8px}
-#mensagem{position:fixed;top:85px;width:100%;text-align:center;text-shadow:1px 1px 3px black}
-#controlos{position:fixed;bottom:15px;left:12px;right:12px;
-display:flex;justify-content:space-between;align-items:end;pointer-events:none}
-#movimento{display:grid;grid-template-columns:55px 55px 55px;gap:5px;pointer-events:auto}
-button{border:2px solid #fff8;border-radius:12px;background:#51351ddd;
-color:white;font-size:22px;width:55px;height:55px;touch-action:none}
-#lancar{width:90px;height:70px;background:#a52c20;font-size:16px;pointer-events:auto}
-#ajuda{position:fixed;bottom:155px;left:10px;font-size:12px;color:white;
-text-shadow:1px 1px 3px black}
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #87b9d5;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+}
+
+#titulo {
+  position: fixed;
+  top: 10px;
+  width: 100%;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px black;
+  pointer-events: none;
+}
+
+#info {
+  position: fixed;
+  top: 45px;
+  left: 10px;
+  padding: 9px;
+  background: #0009;
+  border-radius: 8px;
+}
+
+#mensagem {
+  position: fixed;
+  top: 85px;
+  width: 100%;
+  text-align: center;
+  text-shadow: 2px 2px 4px black;
+  pointer-events: none;
+}
+
+#controlos {
+  position: fixed;
+  bottom: 15px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+}
+
+#movimento {
+  display: grid;
+  grid-template-columns: 55px 55px 55px;
+  gap: 5px;
+}
+
+button {
+  width: 55px;
+  height: 55px;
+  border: 2px solid #ffffff88;
+  border-radius: 12px;
+  background: #51351ddd;
+  color: white;
+  font-size: 22px;
+  touch-action: none;
+}
+
+#lancar {
+  width: 95px;
+  height: 70px;
+  background: #a52c20;
+  font-size: 16px;
+}
+
+#forca {
+  position: fixed;
+  bottom: 105px;
+  right: 12px;
+  width: 95px;
+  height: 12px;
+  background: #222;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#barra {
+  width: 0%;
+  height: 100%;
+  background: #ffcc22;
+}
 </style>
 </head>
+
 <body>
+
 <div id="titulo">BUGALHOS — TRÊS COVINHAS</div>
-<div id="info">Berlindes: <span id="pontos">0</span></div>
-<div id="mensagem">Explora o pátio e prepara o lançamento!</div>
-<div id="ajuda">Arrasta o dedo no ecrã para olhar à volta</div>
+
+<div id="info">
+  Berlindes conquistados: <span id="pontos">0</span>
+</div>
+
+<div id="mensagem">
+  Explora o pátio e prepara o lançamento!
+</div>
+
+<div id="forca">
+  <div id="barra"></div>
+</div>
 
 <div id="controlos">
+
   <div id="movimento">
-    <span></span><button data-move="forward">▲</button><span></span>
+    <span></span>
+    <button data-move="forward">▲</button>
+    <span></span>
+
     <button data-move="left">◀</button>
     <button data-move="back">▼</button>
     <button data-move="right">▶</button>
   </div>
-  <button id="lancar">LANÇAR</button>
+
+  <button id="lancar">SEGURAR<br>LANÇAR</button>
+
 </div>
 
 <script type="module">
+
 import * as THREE from
 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
+// --------------------------------------------------
+// CENA
+// --------------------------------------------------
+
 const scene = new THREE.Scene();
+
 scene.background = new THREE.Color(0x87b9d5);
 scene.fog = new THREE.Fog(0x87b9d5, 25, 75);
 
-const camera = new THREE.PerspectiveCamera(
-  75, innerWidth/innerHeight, 0.1, 150
-);
-camera.position.set(0,1.65,9);
-  scene.add(camera);
+// --------------------------------------------------
+// CÂMARA
+// --------------------------------------------------
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const camera = new THREE.PerspectiveCamera(
+  75,
+  innerWidth / innerHeight,
+  0.1,
+  150
+);
+
+camera.position.set(0, 1.65, 9);
+scene.add(camera);
+
+// --------------------------------------------------
+// RENDERIZADOR
+// --------------------------------------------------
+
+const renderer = new THREE.WebGLRenderer({
+  antialias: true
+});
+
+renderer.setSize(innerWidth, innerHeight);
+
+renderer.setPixelRatio(
+  Math.min(window.devicePixelRatio, 2)
+);
+
 renderer.shadowMap.enabled = true;
+
 document.body.appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0xffffff,0x76502b,2));
-const sol = new THREE.DirectionalLight(0xffffff,2);
-sol.position.set(-8,15,8);
+// --------------------------------------------------
+// LUZES
+// --------------------------------------------------
+
+scene.add(
+  new THREE.HemisphereLight(
+    0xffffff,
+    0x76502b,
+    2
+  )
+);
+
+const sol = new THREE.DirectionalLight(
+  0xffffff,
+  2
+);
+
+sol.position.set(-8, 15, 8);
 sol.castShadow = true;
+
 scene.add(sol);
 
+// --------------------------------------------------
+// TERRENO
+// --------------------------------------------------
+
 const terra = new THREE.Mesh(
-  new THREE.PlaneGeometry(100,100),
-  new THREE.MeshStandardMaterial({color:0x987044,roughness:1})
+  new THREE.PlaneGeometry(100, 100),
+  new THREE.MeshStandardMaterial({
+    color: 0x987044,
+    roughness: 1
+  })
 );
-terra.rotation.x=-Math.PI/2;
-terra.receiveShadow=true;
+
+terra.rotation.x = -Math.PI / 2;
+terra.receiveShadow = true;
+
 scene.add(terra);
 
-// Pátio e edifício da escola
-function caixa(x,y,z,sx,sy,sz,cor){
-  const m=new THREE.Mesh(
-    new THREE.BoxGeometry(sx,sy,sz),
-    new THREE.MeshStandardMaterial({color:cor})
-  );
-  m.position.set(x,y,z);
-  m.castShadow=true;
-  m.receiveShadow=true;
-  scene.add(m);
-  return m;
-}
-caixa(0,2,-23,25,4,2,0xd1b58b);
-caixa(-13,2,-12,2,4,22,0xc3a77d);
-caixa(13,2,-12,2,4,22,0xc3a77d);
+// --------------------------------------------------
+// CONSTRUÇÕES DO PÁTIO
+// --------------------------------------------------
 
-// Três covinhas
-const covinhas=[[-5,-3],[0,-9],[5,-3]];
-for(const [x,z] of covinhas){
-  const buraco=new THREE.Mesh(
-    new THREE.CylinderGeometry(.48,.52,.08,32),
-    new THREE.MeshStandardMaterial({color:0x24170e})
+function caixa(
+  x, y, z,
+  sx, sy, sz,
+  cor
+) {
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(sx, sy, sz),
+    new THREE.MeshStandardMaterial({
+      color: cor
+    })
   );
-  buraco.position.set(x,.015,z);
+
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+
+  scene.add(mesh);
+
+  return mesh;
+}
+
+caixa(
+  0, 2, -23,
+  25, 4, 2,
+  0xd1b58b
+);
+
+caixa(
+  -13, 2, -12,
+  2, 4, 22,
+  0xc3a77d
+);
+
+caixa(
+  13, 2, -12,
+  2, 4, 22,
+  0xc3a77d
+);
+
+// --------------------------------------------------
+// TRÊS COVINHAS
+// --------------------------------------------------
+
+const covinhas = [
+  [-5, -3],
+  [0, -9],
+  [5, -3]
+];
+
+for (const [x, z] of covinhas) {
+
+  const buraco = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      0.48,
+      0.52,
+      0.08,
+      32
+    ),
+    new THREE.MeshStandardMaterial({
+      color: 0x24170e
+    })
+  );
+
+  buraco.position.set(x, 0.015, z);
   scene.add(buraco);
 
-  const aro=new THREE.Mesh(
-    new THREE.TorusGeometry(.52,.07,10,32),
-    new THREE.MeshStandardMaterial({color:0x684322})
+  const aro = new THREE.Mesh(
+    new THREE.TorusGeometry(
+      0.52,
+      0.07,
+      10,
+      32
+    ),
+    new THREE.MeshStandardMaterial({
+      color: 0x684322
+    })
   );
-  aro.rotation.x=Math.PI/2;
-  aro.position.set(x,.06,z);
+
+  aro.rotation.x = Math.PI / 2;
+  aro.position.set(x, 0.06, z);
+
   scene.add(aro);
 }
 
-// Berlindes
-// Mão do jogador em primeira pessoa
-const mao = new THREE.Group();
-camera.add(mao);
-mao.position.set(0.48,-0.48,-0.85);
+// --------------------------------------------------
+// MÃO DO JOGADOR
+// --------------------------------------------------
 
-// Palma da mão
-const palma = new THREE.Mesh(
-  new THREE.SphereGeometry(0.19,24,24),
-  new THREE.MeshStandardMaterial({color:0xc58b63})
+const mao = new THREE.Group();
+
+camera.add(mao);
+
+// A mão fica à frente da câmara
+mao.position.set(
+  0.48,
+  -0.48,
+  -0.85
 );
-palma.scale.set(1,0.65,1.3);
+
+// Palma
+const palma = new THREE.Mesh(
+  new THREE.SphereGeometry(
+    0.19,
+    24,
+    24
+  ),
+  new THREE.MeshStandardMaterial({
+    color: 0xc58b63
+  })
+);
+
+palma.scale.set(1, 0.65, 1.3);
 mao.add(palma);
 
 // Dedo indicador
 const dedo = new THREE.Mesh(
-  new THREE.CapsuleGeometry(0.045,0.20,4,8),
-  new THREE.MeshStandardMaterial({color:0xd9a078})
-);
-dedo.position.set(-0.09,0.07,-0.12);
-dedo.rotation.z=0.5;
-mao.add(dedo);
-
-// Berlinde na mão
-const berlindeMao = new THREE.Mesh(
-  new THREE.SphereGeometry(0.105,24,24),
+  new THREE.CapsuleGeometry(
+    0.045,
+    0.20,
+    4,
+    8
+  ),
   new THREE.MeshStandardMaterial({
-    color:0xff2020,
-    metalness:0.45,
-    roughness:0.18
+    color: 0xd9a078
   })
 );
-berlindeMao.position.set(-0.04,0.14,-0.25);
-mao.add(berlindeMao);
-const bolas=[];
-const cores=[0xe53935,0x2479e8,0xf5d52d,0x27bb70,0xb34bd1];
 
-function criarBerlinde(x,z,cor){
-  const mesh=new THREE.Mesh(
-    new THREE.SphereGeometry(.22,24,18),
+dedo.position.set(-0.09, 0.07, -0.12);
+dedo.rotation.z = 0.5;
+
+mao.add(dedo);
+
+// Berlinde que aparece na mão
+const berlindeMao = new THREE.Mesh(
+  new THREE.SphereGeometry(
+    0.105,
+    24,
+    24
+  ),
+  new THREE.MeshStandardMaterial({
+    color: 0xff2020,
+    metalness: 0.45,
+    roughness: 0.18
+  })
+);
+
+berlindeMao.position.set(
+  -0.04,
+  0.14,
+  -0.25
+);
+
+mao.add(berlindeMao);
+
+// --------------------------------------------------
+// BERLINDES NO TERRENO
+// --------------------------------------------------
+
+const bolas = [];
+
+const cores = [
+  0xe53935,
+  0x2479e8,
+  0xf5d52d,
+  0x27bb70,
+  0xb34bd1
+];
+
+function criarBerlinde(
+  x,
+  z,
+  cor,
+  jogador = false
+) {
+
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(
+      0.22,
+      24,
+      18
+    ),
     new THREE.MeshStandardMaterial({
-      color:cor,metalness:.35,roughness:.2
+      color: cor,
+      metalness: 0.35,
+      roughness: 0.2
     })
   );
-  mesh.position.set(x,.22,z);
-  mesh.castShadow=true;
+
+  mesh.position.set(x, 0.22, z);
+  mesh.castShadow = true;
+
   scene.add(mesh);
-  bolas.push({mesh,vel:new THREE.Vector3(0,0,0),jogador:false});
+
+  const bola = {
+    mesh: mesh,
+    vel: new THREE.Vector3(0, 0, 0),
+    jogador: jogador,
+    ativa: true
+  };
+
+  bolas.push(bola);
+
+  return bola;
 }
-criarBerlinde(-2,1,cores[0]);
-criarBerlinde(1,-1,cores[1]);
-criarBerlinde(3,2,cores[2]);
-criarBerlinde(-4,-5,cores[3]);
 
-let total=0;
-let yaw=0,pitch=0;
-const teclas={};
-const movimento={forward:false,back:false,left:false,right:false};
+// Berlindes adversários
+criarBerlinde(-2, 1, cores[0]);
+criarBerlinde(1, -1, cores[1]);
+criarBerlinde(3, 2, cores[2]);
+criarBerlinde(-4, -5, cores[3]);
 
-document.querySelectorAll('[data-move]').forEach(btn=>{
-  const nome=btn.dataset.move;
-  btn.addEventListener('pointerdown',e=>{
-    e.preventDefault(); movimento[nome]=true;
-  });
-  const parar=e=>{movimento[nome]=false};
-  btn.addEventListener('pointerup',parar);
-  btn.addEventListener('pointerleave',parar);
-  btn.addEventListener('pointercancel',parar);
-});
+let total = 0;
 
-addEventListener('keydown',e=>teclas[e.key.toLowerCase()]=true);
-addEventListener('keyup',e=>teclas[e.key.toLowerCase()]=false);
+// --------------------------------------------------
+// MOVIMENTO
+// --------------------------------------------------
 
-// Olhar à volta com o dedo ou rato
-let aOlhar=false,px=0,py=0;
-renderer.domElement.addEventListener('pointerdown',e=>{
-  aOlhar=true;px=e.clientX;py=e.clientY;
-});
-addEventListener('pointerup',()=>aOlhar=false);
-addEventListener('pointermove',e=>{
-  if(!aOlhar)return;
-  yaw-=(e.clientX-px)*.004;
-  pitch-=(e.clientY-py)*.004;
-  pitch=THREE.MathUtils.clamp(pitch,-1.1,1.1);
-  px=e.clientX;py=e.clientY;
-});
+let yaw = 0;
+let pitch = 0;
 
-// Lançamento do berlinde
-function lancar(){
-  const direcao=new THREE.Vector3();
-  camera.getWorldDirection(direcao);
-  const bola=criarBerlinde;
-  const mesh=new THREE.Mesh(
-    new THREE.SphereGeometry(.22,24,18),
-    new THREE.MeshStandardMaterial({color:0xff3434,metalness:.4,roughness:.2})
+const teclas = {};
+
+const movimento = {
+  forward: false,
+  back: false,
+  left: false,
+  right: false
+};
+
+// Controlos no ecrã
+document.querySelectorAll(
+  '[data-move]'
+).forEach(btn => {
+
+  const nome = btn.dataset.move;
+
+  btn.addEventListener(
+    'pointerdown',
+    e => {
+      e.preventDefault();
+      movimento[nome] = true;
+    }
   );
-  mesh.position.copy(camera.position).addScaledVector(direcao,.8);
-  scene.add(mesh);
-  bolas.push({
-    mesh,
-    vel:direcao.multiplyScalar(13).add(new THREE.Vector3(0,2,0)),
-    jogador:true
-  });
-  document.getElementById('mensagem').textContent='Berlinde lançado!';
-mao.position.z = -0.55;
 
-setTimeout(() => {
-  mao.position.z = -0.85;
-}, 250);
+  function parar() {
+    movimento[nome] = false;
+  }
 
-berlindeMao.visible = false;
+  btn.addEventListener('pointerup', parar);
+  btn.addEventListener('pointerleave', parar);
+  btn.addEventListener('pointercancel', parar);
+});
 
-setTimeout(() => {
-  berlindeMao.visible = true;
-}, 500);
+// Teclado
+addEventListener('keydown', e => {
+  teclas[e.key.toLowerCase()] = true;
+});
+
+addEventListener('keyup', e => {
+  teclas[e.key.toLowerCase()] = false;
+});
+
+// --------------------------------------------------
+// OLHAR À VOLTA
+// --------------------------------------------------
+
+let aOlhar = false;
+let px = 0;
+let py = 0;
+
+renderer.domElement.addEventListener(
+  'pointerdown',
+  e => {
+    aOlhar = true;
+    px = e.clientX;
+    py = e.clientY;
+  }
+);
+
+addEventListener('pointerup', () => {
+  aOlhar = false;
+});
+
+addEventListener('pointermove', e => {
+
+  if (!aOlhar) return;
+
+  yaw -= (e.clientX - px) * 0.004;
+  pitch -= (e.clientY - py) * 0.004;
+
+  pitch = THREE.MathUtils.clamp(
+    pitch,
+    -1.1,
+    1.1
+  );
+
+  px = e.clientX;
+  py = e.clientY;
+});
+
+// --------------------------------------------------
+// LANÇAMENTO COM FORÇA
+// --------------------------------------------------
+
+let aCarregar = false;
+let tempoCarga = 0;
+
+const botaoLancar =
+  document.getElementById('lancar');
+
+const barra =
+  document.getElementById('barra');
+
+function comecarCarga(e) {
+
+  e.preventDefault();
+
+  if (aCarregar) return;
+
+  aCarregar = true;
+  tempoCarga = 0;
 }
-document.getElementById('lancar').addEventListener('click',lancar);
 
-// Movimento e física
-const relogio=new THREE.Clock();
-function atualizar(dt){
-  const frente=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
-  const lado=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
-  const andar=new THREE.Vector3();
+function terminarCarga(e) {
 
-  if(teclas.w||teclas.arrowup||movimento.forward)andar.add(frente);
-  if(teclas.s||teclas.arrowdown||movimento.back)andar.sub(frente);
-  if(teclas.a||teclas.arrowleft||movimento.left)andar.sub(lado);
-  if(teclas.d||teclas.arrowright||movimento.right)andar.add(lado);
+  e.preventDefault();
 
-  if(andar.length()>0){
-    andar.normalize().multiplyScalar(5*dt);
+  if (!aCarregar) return;
+
+  aCarregar = false;
+
+  const forca = Math.min(
+    6 + tempoCarga * 12,
+    22
+  );
+
+  lançarBerlinde(forca);
+
+  barra.style.width = '0%';
+}
+
+botaoLancar.addEventListener(
+  'pointerdown',
+  comecarCarga
+);
+
+botaoLancar.addEventListener(
+  'pointerup',
+  terminarCarga
+);
+
+botaoLancar.addEventListener(
+  'pointerleave',
+  terminarCarga
+);
+
+botaoLancar.addEventListener(
+  'pointercancel',
+  terminarCarga
+);
+
+// --------------------------------------------------
+// CRIAR E LANÇAR BERLINDE
+// --------------------------------------------------
+
+function lançarBerlinde(forca) {
+
+  const direcao = new THREE.Vector3();
+
+  camera.getWorldDirection(direcao);
+
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(
+      0.22,
+      24,
+      18
+    ),
+    new THREE.MeshStandardMaterial({
+      color: 0xff3434,
+      metalness: 0.4,
+      roughness: 0.2
+    })
+  );
+
+  mesh.position
+    .copy(camera.position)
+    .addScaledVector(direcao, 0.8);
+
+  scene.add(mesh);
+
+  const bola = {
+    mesh: mesh,
+    vel: direcao
+      .multiplyScalar(forca)
+      .add(new THREE.Vector3(0, 2, 0)),
+    jogador: true,
+    ativa: true
+  };
+
+  bolas.push(bola);
+
+  // Animação da mão
+  mao.position.z = -0.55;
+
+  berlindeMao.visible = false;
+
+  setTimeout(() => {
+    mao.position.z = -0.85;
+    berlindeMao.visible = true;
+  }, 250);
+
+  document.getElementById(
+    'mensagem'
+  ).textContent = 'Berlinde lançado!';
+}
+
+// --------------------------------------------------
+// FÍSICA E COLISÕES
+// --------------------------------------------------
+
+const relogio = new THREE.Clock();
+
+function atualizar(dt) {
+
+  const frente = new THREE.Vector3(
+    -Math.sin(yaw),
+    0,
+    -Math.cos(yaw)
+  );
+
+  const lado = new THREE.Vector3(
+    Math.cos(yaw),
+    0,
+    -Math.sin(yaw)
+  );
+
+  const andar = new THREE.Vector3();
+
+  if (
+    teclas.w ||
+    teclas.arrowup ||
+    movimento.forward
+  ) {
+    andar.add(frente);
+  }
+
+  if (
+    teclas.s ||
+    teclas.arrowdown ||
+    movimento.back
+  ) {
+    andar.sub(frente);
+  }
+
+  if (
+    teclas.a ||
+    teclas.arrowleft ||
+    movimento.left
+  ) {
+    andar.sub(lado);
+  }
+
+  if (
+    teclas.d ||
+    teclas.arrowright ||
+    movimento.right
+  ) {
+    andar.add(lado);
+  }
+
+  if (andar.length() > 0) {
+
+    andar.normalize().multiplyScalar(5 * dt);
+
     camera.position.add(andar);
   }
-  camera.position.x=THREE.MathUtils.clamp(camera.position.x,-11,11);
-  camera.position.z=THREE.MathUtils.clamp(camera.position.z,-20,12);
-  camera.rotation.order='YXZ';
-  camera.rotation.y=yaw;
-  camera.rotation.x=pitch;
 
-  for(const b of bolas){
-    if(b.vel.length()<.01)continue;
-    b.vel.y-=9.8*dt;
-    b.mesh.position.addScaledVector(b.vel,dt);
+  camera.position.x =
+    THREE.MathUtils.clamp(
+      camera.position.x,
+      -11,
+      11
+    );
 
-    if(b.mesh.position.y<.22){
-      b.mesh.position.y=.22;
-      b.vel.y=Math.abs(b.vel.y)*.35;
-      b.vel.x*=.82;b.vel.z*=.82;
-      if(Math.abs(b.vel.y)<.5)b.vel.y=0;
-    }
-    b.mesh.rotation.x+=b.vel.z*dt*2;
-    b.mesh.rotation.z-=b.vel.x*dt*2;
+  camera.position.z =
+    THREE.MathUtils.clamp(
+      camera.position.z,
+      -20,
+      12
+    );
 
-    for(const alvo of bolas){
-      if(alvo===b || alvo.jogador)continue;
-      const distancia=b.mesh.position.distanceTo(alvo.mesh.position);
-      if(distancia<.43 && b.vel.length()>2){
-        scene.remove(alvo.mesh);
-        bolas.splice(bolas.indexOf(alvo),1);
-        total++;
-        document.getElementById('pontos').textContent=total;
-        document.getElementById('mensagem').textContent=
-          'Acertaste! Conquistaste um berlinde!';
-        b.vel.multiplyScalar(.5);
-        break;
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = yaw;
+  camera.rotation.x = pitch;
+
+  // Aumentar a força enquanto se segura
+  if (aCarregar) {
+
+    tempoCarga += dt;
+
+    const percentagem = Math.min(
+      tempoCarga / 1.3 * 100,
+      100
+    );
+
+    barra.style.width = percentagem + '%';
+  }
+
+  // Física dos berlindes
+  for (const bola of bolas) {
+
+    if (!bola.ativa) continue;
+
+    if (bola.vel.length() < 0.01) continue;
+
+    bola.vel.y -= 9.8 * dt;
+
+    bola.mesh.position.addScaledVector(
+      bola.vel,
+      dt
+    );
+
+    // Ressalto no chão
+    if (bola.mesh.position.y < 0.22) {
+
+      bola.mesh.position.y = 0.22;
+
+      bola.vel.y =
+        Math.abs(bola.vel.y) * 0.35;
+
+      bola.vel.x *= 0.82;
+      bola.vel.z *= 0.82;
+
+      if (Math.abs(bola.vel.y) < 0.5) {
+        bola.vel.y = 0;
       }
     }
 
-    for(const [x,z] of covinhas){
-      const dx=b.mesh.position.x-x;
-      const dz=b.mesh.position.z-z;
-      if(Math.hypot(dx,dz)<.38 && b.mesh.position.y<.35){
-        b.vel.set(0,0,0);
-        b.mesh.position.y=.08;
+    // Rotação
+    bola.mesh.rotation.x +=
+      bola.vel.z * dt * 2;
+
+    bola.mesh.rotation.z -=
+      bola.vel.x * dt * 2;
+
+    // Covinhas
+    for (const [x, z] of covinhas) {
+
+      const dx = bola.mesh.position.x - x;
+      const dz = bola.mesh.position.z - z;
+
+      if (
+        Math.hypot(dx, dz) < 0.38 &&
+        bola.mesh.position.y < 0.35
+      ) {
+
+        bola.vel.set(0, 0, 0);
+        bola.mesh.position.y = 0.08;
+      }
+    }
+  }
+
+  // Colisões entre berlindes
+  for (let i = 0; i < bolas.length; i++) {
+
+    const atacante = bolas[i];
+
+    if (!atacante.ativa) continue;
+
+    if (!atacante.jogador) continue;
+
+    for (let j = 0; j < bolas.length; j++) {
+
+      if (i === j) continue;
+
+      const alvo = bolas[j];
+
+      if (!alvo.ativa) continue;
+
+      if (alvo.jogador) continue;
+
+      const distancia =
+        atacante.mesh.position.distanceTo(
+          alvo.mesh.position
+        );
+
+      if (
+        distancia < 0.43 &&
+        atacante.vel.length() > 2
+      ) {
+
+        alvo.ativa = false;
+
+        scene.remove(alvo.mesh);
+
+        total++;
+
+        document.getElementById(
+          'pontos'
+        ).textContent = total;
+
+        document.getElementById(
+          'mensagem'
+        ).textContent =
+          'Acertaste! Conquistaste um berlinde!';
+
+        atacante.vel.multiplyScalar(0.5);
       }
     }
   }
 }
 
-function animar(){
+// --------------------------------------------------
+// CICLO DO JOGO
+// --------------------------------------------------
+
+function animar() {
+
   requestAnimationFrame(animar);
-  const dt=Math.min(relogio.getDelta(),.04);
+
+  const dt = Math.min(
+    relogio.getDelta(),
+    0.04
+  );
+
   atualizar(dt);
-  renderer.render(scene,camera);
+
+  renderer.render(scene, camera);
 }
+
 animar();
 
-addEventListener('resize',()=>{
-  camera.aspect=innerWidth/innerHeight;
+// --------------------------------------------------
+// REDIMENSIONAR ECRÃ
+// --------------------------------------------------
+
+addEventListener('resize', () => {
+
+  camera.aspect =
+    innerWidth / innerHeight;
+
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
+
+  renderer.setSize(
+    innerWidth,
+    innerHeight
+  );
 });
+
 </script>
 </body>
 </html>
+
+
 
