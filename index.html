@@ -790,33 +790,105 @@ function atualizar(dt) {
   }
 
   // Colisões entre berlindes
+  
+  // Colisões físicas entre berlindes
   for (let i = 0; i < bolas.length; i++) {
 
-    const atacante = bolas[i];
+    const a = bolas[i];
 
-    if (!atacante.ativa) continue;
+    if (!a.ativa) continue;
 
-    if (!atacante.jogador) continue;
+    for (let j = i + 1; j < bolas.length; j++) {
 
-    for (let j = 0; j < bolas.length; j++) {
+      const b = bolas[j];
 
-      if (i === j) continue;
+      if (!b.ativa) continue;
 
-      const alvo = bolas[j];
-
-      if (!alvo.ativa) continue;
-
-      if (alvo.jogador) continue;
-
-      const distancia =
-        atacante.mesh.position.distanceTo(
-          alvo.mesh.position
-        );
-
+      // Colisão quando estão praticamente à mesma altura
       if (
-        distancia < 0.43 &&
-        atacante.vel.length() > 2
-      ) {
+        Math.abs(
+          a.mesh.position.y - b.mesh.position.y
+        ) > 0.38
+      ) continue;
+
+      const dx =
+        b.mesh.position.x - a.mesh.position.x;
+
+      const dz =
+        b.mesh.position.z - a.mesh.position.z;
+
+      const distancia = Math.hypot(dx, dz);
+      const distanciaMinima = 0.44;
+
+      if (distancia >= distanciaMinima) continue;
+
+      // Direção do impacto
+      let nx = 1;
+      let nz = 0;
+
+      if (distancia > 0.0001) {
+        nx = dx / distancia;
+        nz = dz / distancia;
+      }
+
+      // Separar os berlindes para não ficarem sobrepostos
+      const sobreposicao = distanciaMinima - distancia;
+
+      a.mesh.position.x -= nx * sobreposicao * 0.5;
+      a.mesh.position.z -= nz * sobreposicao * 0.5;
+
+      b.mesh.position.x += nx * sobreposicao * 0.5;
+      b.mesh.position.z += nz * sobreposicao * 0.5;
+
+      // Velocidade relativa
+      const velocidadeRelativaX = b.vel.x - a.vel.x;
+      const velocidadeRelativaZ = b.vel.z - a.vel.z;
+
+      const velocidadeImpacto =
+        velocidadeRelativaX * nx +
+        velocidadeRelativaZ * nz;
+
+      // Transferência de energia entre os berlindes
+      if (velocidadeImpacto < 0) {
+
+        const elasticidade = 0.72;
+        const impulso =
+          -(1 + elasticidade) * velocidadeImpacto / 2;
+
+        a.vel.x -= impulso * nx;
+        a.vel.z -= impulso * nz;
+
+        b.vel.x += impulso * nx;
+        b.vel.z += impulso * nz;
+
+        // Contar o berlinde conquistado apenas uma vez
+        if (
+          Math.abs(velocidadeImpacto) > 1.5 &&
+          a.jogador !== b.jogador
+        ) {
+
+          const atacante = a.jogador ? a : b;
+          const alvo = a.jogador ? b : a;
+
+          if (!alvo.conquistado) {
+
+            alvo.conquistado = true;
+            total++;
+
+            document.getElementById(
+              'pontos'
+            ).textContent = total;
+
+            document.getElementById(
+              'mensagem'
+            ).textContent =
+              'Boa tacada! Empurraste e conquistaste um berlinde!';
+          }
+        }
+      }
+    }
+  }
+ {
 
         alvo.ativa = false;
 
