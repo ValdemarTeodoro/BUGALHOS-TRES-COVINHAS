@@ -7,9 +7,7 @@
 <title>BUGALHOS - TRÊS COVINHAS</title>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -42,15 +40,18 @@ canvas {
   padding: 9px;
   background: #0009;
   border-radius: 8px;
+  line-height: 1.6;
+  font-size: 13px;
 }
 
 #mensagem {
   position: fixed;
-  top: 85px;
+  top: 105px;
   width: 100%;
   text-align: center;
   text-shadow: 2px 2px 4px black;
   pointer-events: none;
+  padding: 0 12px;
 }
 
 #controlos {
@@ -87,6 +88,10 @@ button {
   font-size: 16px;
 }
 
+#lancar:disabled {
+  opacity: 0.4;
+}
+
 #forca {
   position: fixed;
   bottom: 105px;
@@ -111,11 +116,16 @@ button {
 <div id="titulo">BUGALHOS — TRÊS COVINHAS</div>
 
 <div id="info">
-  Berlindes conquistados: <span id="pontos">0</span>
+  <div>Vez: <span id="vez">Tu</span></div>
+  <div>Os teus berlindes ganhos: <span id="pontos">0</span></div>
+  <div>Tu: <span id="p0">0</span> |
+       Azul: <span id="p1">0</span></div>
+  <div>Amarelo: <span id="p2">0</span> |
+       Verde: <span id="p3">0</span></div>
 </div>
 
 <div id="mensagem">
-  Explora o pátio e prepara o lançamento!
+  É a tua vez! Prepara o lançamento.
 </div>
 
 <div id="forca">
@@ -142,6 +152,30 @@ button {
 
 import * as THREE from
 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+// --------------------------------------------------
+// JOGADORES
+// --------------------------------------------------
+
+const jogadores = [
+  { id: 0, nome: 'Tu', cor: 0xe53935 },
+  { id: 1, nome: 'Azul', cor: 0x2479e8 },
+  { id: 2, nome: 'Amarelo', cor: 0xf5d52d },
+  { id: 3, nome: 'Verde', cor: 0x27bb70 }
+];
+
+const pontos = [0, 0, 0, 0];
+
+let jogadorAtual = 0;
+let aguardarParagem = false;
+let tempoIA = 0;
+
+// Locais de lançamento dos adversários
+const locaisIA = {
+  1: new THREE.Vector3(-8, 0.25, 6),
+  2: new THREE.Vector3(8, 0.25, 6),
+  3: new THREE.Vector3(0, 0.25, -17)
+};
 
 // --------------------------------------------------
 // CENA
@@ -227,11 +261,8 @@ scene.add(terra);
 // CONSTRUÇÕES DO PÁTIO
 // --------------------------------------------------
 
-function caixa(
-  x, y, z,
-  sx, sy, sz,
-  cor
-) {
+function caixa(x, y, z, sx, sy, sz, cor) {
+
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(sx, sy, sz),
     new THREE.MeshStandardMaterial({
@@ -248,23 +279,9 @@ function caixa(
   return mesh;
 }
 
-caixa(
-  0, 2, -23,
-  25, 4, 2,
-  0xd1b58b
-);
-
-caixa(
-  -13, 2, -12,
-  2, 4, 22,
-  0xc3a77d
-);
-
-caixa(
-  13, 2, -12,
-  2, 4, 22,
-  0xc3a77d
-);
+caixa(0, 2, -23, 25, 4, 2, 0xd1b58b);
+caixa(-13, 2, -12, 2, 4, 22, 0xc3a77d);
+caixa(13, 2, -12, 2, 4, 22, 0xc3a77d);
 
 // --------------------------------------------------
 // TRÊS COVINHAS
@@ -280,10 +297,7 @@ for (const [x, z] of covinhas) {
 
   const buraco = new THREE.Mesh(
     new THREE.CylinderGeometry(
-      0.48,
-      0.52,
-      0.08,
-      32
+      0.48, 0.52, 0.08, 32
     ),
     new THREE.MeshStandardMaterial({
       color: 0x24170e
@@ -295,10 +309,7 @@ for (const [x, z] of covinhas) {
 
   const aro = new THREE.Mesh(
     new THREE.TorusGeometry(
-      0.52,
-      0.07,
-      10,
-      32
+      0.52, 0.07, 10, 32
     ),
     new THREE.MeshStandardMaterial({
       color: 0x684322
@@ -319,19 +330,10 @@ const mao = new THREE.Group();
 
 camera.add(mao);
 
-mao.position.set(
-  0.20,
-  -0.42,
-  -0.85
-);
+mao.position.set(0.20, -0.42, -0.85);
 
-// Palma
 const palma = new THREE.Mesh(
-  new THREE.SphereGeometry(
-    0.19,
-    24,
-    24
-  ),
+  new THREE.SphereGeometry(0.19, 24, 24),
   new THREE.MeshStandardMaterial({
     color: 0xc58b63
   })
@@ -340,14 +342,8 @@ const palma = new THREE.Mesh(
 palma.scale.set(1, 0.65, 1.3);
 mao.add(palma);
 
-// Dedo indicador
 const dedo = new THREE.Mesh(
-  new THREE.CapsuleGeometry(
-    0.045,
-    0.20,
-    4,
-    8
-  ),
+  new THREE.CapsuleGeometry(0.045, 0.20, 4, 8),
   new THREE.MeshStandardMaterial({
     color: 0xd9a078
   })
@@ -355,16 +351,10 @@ const dedo = new THREE.Mesh(
 
 dedo.position.set(-0.09, 0.07, -0.12);
 dedo.rotation.z = 0.5;
-
 mao.add(dedo);
 
-// Berlinde na mão
 const berlindeMao = new THREE.Mesh(
-  new THREE.SphereGeometry(
-    0.105,
-    24,
-    24
-  ),
+  new THREE.SphereGeometry(0.105, 24, 24),
   new THREE.MeshStandardMaterial({
     color: 0xff2020,
     metalness: 0.45,
@@ -372,41 +362,19 @@ const berlindeMao = new THREE.Mesh(
   })
 );
 
-berlindeMao.position.set(
-  -0.04,
-  0.14,
-  -0.25
-);
-
+berlindeMao.position.set(-0.04, 0.14, -0.25);
 mao.add(berlindeMao);
 
 // --------------------------------------------------
-// BERLINDES NO TERRENO
+// BERLINDES
 // --------------------------------------------------
 
 const bolas = [];
 
-const cores = [
-  0xe53935,
-  0x2479e8,
-  0xf5d52d,
-  0x27bb70,
-  0xb34bd1
-];
-
-function criarBerlinde(
-  x,
-  z,
-  cor,
-  jogador = false
-) {
+function criarBerlinde(x, z, cor, owner) {
 
   const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(
-      0.22,
-      24,
-      18
-    ),
+    new THREE.SphereGeometry(0.22, 24, 18),
     new THREE.MeshStandardMaterial({
       color: cor,
       metalness: 0.35,
@@ -422,9 +390,9 @@ function criarBerlinde(
   const bola = {
     mesh: mesh,
     vel: new THREE.Vector3(0, 0, 0),
-    jogador: jogador,
+    owner: owner,
     ativa: true,
-    conquistado: false
+    capturada: false
   };
 
   bolas.push(bola);
@@ -432,13 +400,54 @@ function criarBerlinde(
   return bola;
 }
 
-// Berlindes adversários
-criarBerlinde(-2, 1, cores[0]);
-criarBerlinde(1, -1, cores[1]);
-criarBerlinde(3, 2, cores[2]);
-criarBerlinde(-4, -5, cores[3]);
+// Um berlinde inicial para cada adversário
+criarBerlinde(-2, 1, jogadores[1].cor, 1);
+criarBerlinde(1, -1, jogadores[2].cor, 2);
+criarBerlinde(3, 2, jogadores[3].cor, 3);
 
-let total = 0;
+// --------------------------------------------------
+// INTERFACE
+// --------------------------------------------------
+
+const mensagem = document.getElementById('mensagem');
+const botaoLancar = document.getElementById('lancar');
+const barra = document.getElementById('barra');
+
+function atualizarInterface() {
+
+  document.getElementById('vez').textContent =
+    jogadores[jogadorAtual].nome;
+
+  document.getElementById('pontos').textContent =
+    pontos[0];
+
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('p' + i).textContent =
+      pontos[i];
+  }
+
+  botaoLancar.disabled =
+    jogadorAtual !== 0 || aguardarParagem;
+}
+
+function passarVez() {
+
+  jogadorAtual = (jogadorAtual + 1) % 4;
+
+  aguardarParagem = false;
+  tempoIA = 0;
+
+  if (jogadorAtual === 0) {
+    mensagem.textContent = 'É a tua vez! Prepara o lançamento.';
+  } else {
+    mensagem.textContent =
+      'Vez do adversário ' +
+      jogadores[jogadorAtual].nome +
+      '...';
+  }
+
+  atualizarInterface();
+}
 
 // --------------------------------------------------
 // MOVIMENTO
@@ -456,20 +465,14 @@ const movimento = {
   right: false
 };
 
-// Controlos no ecrã
-document.querySelectorAll(
-  '[data-move]'
-).forEach(btn => {
+document.querySelectorAll('[data-move]').forEach(btn => {
 
   const nome = btn.dataset.move;
 
-  btn.addEventListener(
-    'pointerdown',
-    e => {
-      e.preventDefault();
-      movimento[nome] = true;
-    }
-  );
+  btn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    movimento[nome] = true;
+  });
 
   function parar() {
     movimento[nome] = false;
@@ -480,7 +483,6 @@ document.querySelectorAll(
   btn.addEventListener('pointercancel', parar);
 });
 
-// Teclado
 addEventListener('keydown', e => {
   teclas[e.key.toLowerCase()] = true;
 });
@@ -497,14 +499,11 @@ let aOlhar = false;
 let px = 0;
 let py = 0;
 
-renderer.domElement.addEventListener(
-  'pointerdown',
-  e => {
-    aOlhar = true;
-    px = e.clientX;
-    py = e.clientY;
-  }
-);
+renderer.domElement.addEventListener('pointerdown', e => {
+  aOlhar = true;
+  px = e.clientX;
+  py = e.clientY;
+});
 
 addEventListener('pointerup', () => {
   aOlhar = false;
@@ -518,9 +517,7 @@ addEventListener('pointermove', e => {
   pitch -= (e.clientY - py) * 0.004;
 
   pitch = THREE.MathUtils.clamp(
-    pitch,
-    -1.1,
-    1.1
+    pitch, -1.1, 1.1
   );
 
   px = e.clientX;
@@ -528,23 +525,21 @@ addEventListener('pointermove', e => {
 });
 
 // --------------------------------------------------
-// LANÇAMENTO COM FORÇA
+// LANÇAMENTO
 // --------------------------------------------------
 
 let aCarregar = false;
 let tempoCarga = 0;
 
-const botaoLancar =
-  document.getElementById('lancar');
-
-const barra =
-  document.getElementById('barra');
-
 function comecarCarga(e) {
 
   e.preventDefault();
 
-  if (aCarregar) return;
+  if (
+    jogadorAtual !== 0 ||
+    aguardarParagem ||
+    aCarregar
+  ) return;
 
   aCarregar = true;
   tempoCarga = 0;
@@ -558,94 +553,150 @@ function terminarCarga(e) {
 
   aCarregar = false;
 
+  if (jogadorAtual !== 0 || aguardarParagem) {
+    barra.style.width = '0%';
+    return;
+  }
+
   const forca = Math.min(
     6 + tempoCarga * 12,
     22
   );
 
-  lançarBerlinde(forca);
-
-  barra.style.width = '0%';
-}
-
-botaoLancar.addEventListener(
-  'pointerdown',
-  comecarCarga
-);
-
-botaoLancar.addEventListener(
-  'pointerup',
-  terminarCarga
-);
-
-botaoLancar.addEventListener(
-  'pointerleave',
-  terminarCarga
-);
-
-botaoLancar.addEventListener(
-  'pointercancel',
-  terminarCarga
-);
-
-// --------------------------------------------------
-// CRIAR E LANÇAR BERLINDE
-// --------------------------------------------------
-
-function lançarBerlinde(forca) {
-
   const direcao = new THREE.Vector3();
 
   camera.getWorldDirection(direcao);
 
+  lançarBerlinde(
+    forca,
+    0,
+    camera.position,
+    direcao
+  );
+
+  barra.style.width = '0%';
+}
+
+botaoLancar.addEventListener('pointerdown', comecarCarga);
+botaoLancar.addEventListener('pointerup', terminarCarga);
+botaoLancar.addEventListener('pointerleave', terminarCarga);
+botaoLancar.addEventListener('pointercancel', terminarCarga);
+
+// --------------------------------------------------
+// FUNÇÃO GERAL DE LANÇAMENTO
+// --------------------------------------------------
+
+function lançarBerlinde(forca, owner, origem, direcao) {
+
+  const direcaoFinal = direcao.clone().normalize();
+
   const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(
-      0.22,
-      24,
-      18
-    ),
+    new THREE.SphereGeometry(0.22, 24, 18),
     new THREE.MeshStandardMaterial({
-      color: 0xff3434,
+      color: jogadores[owner].cor,
       metalness: 0.4,
       roughness: 0.2
     })
   );
 
-  mesh.position
-    .copy(camera.position)
-    .addScaledVector(direcao, 0.8);
+  mesh.position.copy(origem);
+  mesh.position.addScaledVector(direcaoFinal, 0.8);
 
   scene.add(mesh);
 
   const bola = {
     mesh: mesh,
-    vel: direcao
+    vel: direcaoFinal
       .multiplyScalar(forca)
       .add(new THREE.Vector3(0, 2, 0)),
-    jogador: true,
+    owner: owner,
     ativa: true,
-    conquistado: false
+    capturada: false
   };
 
   bolas.push(bola);
 
-  // Animação da mão
-  mao.position.z = -0.55;
+  aguardarParagem = true;
 
-  berlindeMao.visible = false;
+  if (owner === 0) {
 
-  setTimeout(() => {
-    mao.position.z = -0.85;
-    berlindeMao.visible = true;
-  }, 250);
+    mao.position.z = -0.55;
+    berlindeMao.visible = false;
 
-  document.getElementById(
-    'mensagem'
-  ).textContent = 'Berlinde lançado!';
+    setTimeout(() => {
+      mao.position.z = -0.85;
+      berlindeMao.visible = true;
+    }, 250);
+
+    mensagem.textContent = 'Berlinde lançado!';
+  } else {
+
+    mensagem.textContent =
+      jogadores[owner].nome + ' lançou o berlinde!';
+  }
+
+  atualizarInterface();
 }
 
 // --------------------------------------------------
-// FÍSICA E COLISÕES
+// INTELIGÊNCIA ARTIFICIAL
+// --------------------------------------------------
+
+function jogarComputador(owner) {
+
+  const origem = locaisIA[owner].clone();
+
+  // Procurar o berlinde adversário mais próximo
+  let alvo = null;
+  let menorDistancia = Infinity;
+
+  for (const bola of bolas) {
+
+    if (!bola.ativa) continue;
+    if (bola.owner === owner) continue;
+    if (bola.mesh.position.y < 0.15) continue;
+
+    const distancia =
+      origem.distanceTo(bola.mesh.position);
+
+    if (distancia < menorDistancia) {
+      menorDistancia = distancia;
+      alvo = bola;
+    }
+  }
+
+  let direcao;
+
+  if (alvo) {
+
+    direcao = alvo.mesh.position
+      .clone()
+      .sub(origem);
+
+  } else {
+
+    direcao = new THREE.Vector3(0, 0, -1);
+  }
+
+  direcao.y = 0;
+  direcao.normalize();
+
+  const forca = THREE.MathUtils.clamp(
+    menorDistancia * 1.3,
+    7,
+    18
+  );
+
+  lançarBerlinde(
+    forca,
+    owner,
+    origem,
+    direcao
+  );
+}
+
+// --------------------------------------------------
+// FÍSICA
 // --------------------------------------------------
 
 const relogio = new THREE.Clock();
@@ -699,31 +750,23 @@ function atualizar(dt) {
   }
 
   if (andar.length() > 0) {
-
     andar.normalize().multiplyScalar(5 * dt);
-
     camera.position.add(andar);
   }
 
-  camera.position.x =
-    THREE.MathUtils.clamp(
-      camera.position.x,
-      -11,
-      11
-    );
+  camera.position.x = THREE.MathUtils.clamp(
+    camera.position.x, -11, 11
+  );
 
-  camera.position.z =
-    THREE.MathUtils.clamp(
-      camera.position.z,
-      -20,
-      12
-    );
+  camera.position.z = THREE.MathUtils.clamp(
+    camera.position.z, -20, 12
+  );
 
   camera.rotation.order = 'YXZ';
   camera.rotation.y = yaw;
   camera.rotation.x = pitch;
 
-  // Carregar força do lançamento
+  // Carregar força
   if (aCarregar) {
 
     tempoCarga += dt;
@@ -737,7 +780,7 @@ function atualizar(dt) {
   }
 
   // ------------------------------------------------
-  // MOVIMENTO E FÍSICA DOS BERLINDES
+  // MOVIMENTO DOS BERLINDES
   // ------------------------------------------------
 
   for (const bola of bolas) {
@@ -746,16 +789,12 @@ function atualizar(dt) {
 
     if (bola.vel.length() < 0.01) continue;
 
-    // Gravidade
     bola.vel.y -= 9.8 * dt;
 
-    // Movimento
     bola.mesh.position.addScaledVector(
-      bola.vel,
-      dt
+      bola.vel, dt
     );
 
-    // Ressalto no chão
     if (bola.mesh.position.y < 0.22) {
 
       bola.mesh.position.y = 0.22;
@@ -766,11 +805,9 @@ function atualizar(dt) {
         bola.vel.y = 0;
       }
 
-      // Atrito no chão
       bola.vel.x *= Math.pow(0.985, dt * 60);
       bola.vel.z *= Math.pow(0.985, dt * 60);
 
-      // Parar quando praticamente imobilizado
       if (
         Math.abs(bola.vel.x) < 0.025 &&
         Math.abs(bola.vel.z) < 0.025
@@ -784,12 +821,8 @@ function atualizar(dt) {
       }
     }
 
-    // Rotação visual
-    bola.mesh.rotation.x +=
-      bola.vel.z * dt * 2;
-
-    bola.mesh.rotation.z -=
-      bola.vel.x * dt * 2;
+    bola.mesh.rotation.x += bola.vel.z * dt * 2;
+    bola.mesh.rotation.z -= bola.vel.x * dt * 2;
 
     // Covinhas
     for (const [x, z] of covinhas) {
@@ -801,7 +834,6 @@ function atualizar(dt) {
         Math.hypot(dx, dz) < 0.38 &&
         bola.mesh.position.y < 0.35
       ) {
-
         bola.vel.set(0, 0, 0);
         bola.mesh.position.y = 0.08;
       }
@@ -809,7 +841,7 @@ function atualizar(dt) {
   }
 
   // ------------------------------------------------
-  // COLISÕES FÍSICAS ENTRE BERLINDES
+  // COLISÕES E CONQUISTAS
   // ------------------------------------------------
 
   for (let i = 0; i < bolas.length; i++) {
@@ -824,7 +856,6 @@ function atualizar(dt) {
 
       if (!b.ativa) continue;
 
-      // Verificar altura
       if (
         Math.abs(
           a.mesh.position.y - b.mesh.position.y
@@ -842,7 +873,6 @@ function atualizar(dt) {
 
       if (distancia >= distanciaMinima) continue;
 
-      // Direção da colisão
       let nx = 1;
       let nz = 0;
 
@@ -855,32 +885,64 @@ function atualizar(dt) {
       const sobreposicao =
         distanciaMinima - distancia;
 
-      a.mesh.position.x -=
-        nx * sobreposicao * 0.5;
+      a.mesh.position.x -= nx * sobreposicao * 0.5;
+      a.mesh.position.z -= nz * sobreposicao * 0.5;
 
-      a.mesh.position.z -=
-        nz * sobreposicao * 0.5;
+      b.mesh.position.x += nx * sobreposicao * 0.5;
+      b.mesh.position.z += nz * sobreposicao * 0.5;
 
-      b.mesh.position.x +=
-        nx * sobreposicao * 0.5;
-
-      b.mesh.position.z +=
-        nz * sobreposicao * 0.5;
-
-      // Velocidade relativa
-      const velocidadeRelativaX =
-        b.vel.x - a.vel.x;
-
-      const velocidadeRelativaZ =
-        b.vel.z - a.vel.z;
+      const velocidadeRelativaX = b.vel.x - a.vel.x;
+      const velocidadeRelativaZ = b.vel.z - a.vel.z;
 
       const velocidadeImpacto =
         velocidadeRelativaX * nx +
         velocidadeRelativaZ * nz;
 
-      // Transferência de velocidade
       if (velocidadeImpacto < 0) {
 
+        // Guardar as velocidades antes do impacto
+        const velocidadeA =
+          a.vel.x * nx + a.vel.z * nz;
+
+        const velocidadeB =
+          b.vel.x * nx + b.vel.z * nz;
+
+        // Conquista de berlinde
+        if (
+          Math.abs(velocidadeImpacto) > 1.5 &&
+          a.owner !== b.owner
+        ) {
+
+          const atacante =
+            velocidadeA > velocidadeB ? a : b;
+
+          const alvo =
+            atacante === a ? b : a;
+
+          if (!alvo.capturada) {
+
+            const antigoDono = alvo.owner;
+
+            alvo.owner = atacante.owner;
+            alvo.capturada = true;
+
+            // Atualizar a cor do berlinde conquistado
+            alvo.mesh.material.color.setHex(
+              jogadores[atacante.owner].cor
+            );
+
+            pontos[atacante.owner]++;
+
+            atualizarInterface();
+
+            mensagem.textContent =
+              jogadores[atacante.owner].nome +
+              ' conquistou um berlinde de ' +
+              jogadores[antigoDono].nome + '!';
+          }
+        }
+
+        // Transferência de velocidade
         const elasticidade = 0.72;
 
         const impulso =
@@ -892,33 +954,46 @@ function atualizar(dt) {
 
         b.vel.x += impulso * nx;
         b.vel.z += impulso * nz;
-
-        // Conquista de berlinde adversário
-        if (
-          Math.abs(velocidadeImpacto) > 1.5 &&
-          a.jogador !== b.jogador
-        ) {
-
-          const atacante = a.jogador ? a : b;
-          const alvo = a.jogador ? b : a;
-
-          if (!alvo.conquistado) {
-
-            alvo.conquistado = true;
-
-            total++;
-
-            document.getElementById(
-              'pontos'
-            ).textContent = total;
-
-            document.getElementById(
-              'mensagem'
-            ).textContent =
-              'Boa tacada! Conquistaste um berlinde!';
-          }
-        }
       }
+    }
+  }
+
+  // ------------------------------------------------
+  // TURNO DOS COMPUTADORES
+  // ------------------------------------------------
+
+  if (
+    jogadorAtual !== 0 &&
+    !aguardarParagem
+  ) {
+
+    tempoIA += dt;
+
+    if (tempoIA > 1.2) {
+      jogarComputador(jogadorAtual);
+    }
+  }
+
+  // ------------------------------------------------
+  // VERIFICAR SE OS BERLINDES PARARAM
+  // ------------------------------------------------
+
+  if (aguardarParagem) {
+
+    let todosParados = true;
+
+    for (const bola of bolas) {
+
+      if (!bola.ativa) continue;
+
+      if (bola.vel.length() > 0.06) {
+        todosParados = false;
+        break;
+      }
+    }
+
+    if (todosParados) {
+      passarVez();
     }
   }
 }
@@ -941,6 +1016,7 @@ function animar() {
   renderer.render(scene, camera);
 }
 
+atualizarInterface();
 animar();
 
 // --------------------------------------------------
@@ -949,17 +1025,13 @@ animar();
 
 addEventListener('resize', () => {
 
-  camera.aspect =
-    innerWidth / innerHeight;
-
+  camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
 
-  renderer.setSize(
-    innerWidth,
-    innerHeight
-  );
+  renderer.setSize(innerWidth, innerHeight);
 });
 
 </script>
 </body>
 </html>
+
