@@ -211,6 +211,17 @@ function lancar(){
     jogador:true
   });
   document.getElementById('mensagem').textContent='Berlinde lançado!';
+mao.position.z = -0.55;
+
+setTimeout(() => {
+  mao.position.z = -0.85;
+}, 250);
+
+berlindeMao.visible = false;
+
+setTimeout(() => {
+  berlindeMao.visible = true;
+}, 500);
 }
 document.getElementById('lancar').addEventListener('click',lancar);
 
