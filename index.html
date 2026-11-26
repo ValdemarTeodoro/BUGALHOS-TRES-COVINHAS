@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUGALHOS - TRÊS COVINHAS</title>
+<style>
+body {
+  margin: 0;
+  background: #b58b55;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+h1 { background: #563b25; padding: 18px; }
+#campo {
+  height: 65vh;
+  background: #b58b55;
+  position: relative;
+  overflow: hidden;
+  border: 8px solid #68452b;
+}
+.cova {
+  position: absolute;
+  width: 55px;
+  height: 55px;
+  background: #382719;
+  border-radius: 50%;
+  box-shadow: inset 0 5px 10px #000;
+}
+#c1 { left: 15%; top: 25%; }
+#c2 { left: 45%; top: 65%; }
+#c3 { right: 15%; top: 25%; }
+.berlinde {
+  position: absolute;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, white, #e33, #700);
+  left: 48%;
+  top: 45%;
+}
+button {
+  padding: 14px 22px;
+  margin: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: #563b25;
+  color: white;
+  font-size: 17px;
+}
+</style>
+</head>
+<body>
+<h1>BUGALHOS<br>TRÊS COVINHAS</h1>
+<p>O jogo tradicional dos berlindes!</p>
+<div id="campo">
+  <div class="cova" id="c1"></div>
+  <div class="cova" id="c2"></div>
+  <div class="cova" id="c3"></div>
+  <div class="berlinde" id="bola"></div>
+</div>
+<p id="mensagem">Prepara o teu lançamento!</p>
+<button onclick="jogar()">LANÇAR BERLINDE</button>
+<script>
+let jogadas = 0;
+function jogar() {
+  jogadas++;
+  const bola = document.getElementById("bola");
+  bola.style.left = (10 + Math.random()*75) + "%";
+  bola.style.top = (10 + Math.random()*75) + "%";
+  document.getElementById("mensagem").innerText =
+    "Lançamento " + jogadas + " — continua a jogar!";
+}
+</script>
+</body>
+</html>
